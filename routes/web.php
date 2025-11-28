@@ -20,8 +20,10 @@ use App\Http\Controllers\DosenPembimbing\RekomendasiController;
 use App\Http\Controllers\Mahasiswa\PengajuanController as MahasiswaPengajuanController;
 use App\Http\Controllers\Mahasiswa\RiwayatController as MahasiswaRiwayatController;
 
-// Kalau kamu butuh dashboard mahasiswa, pastikan controllernya ada
-// use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboardController;
+// --- [BARU] CONTROLLER UNTUK FITUR WAREK & CURHAT DOSEN ---
+// (Controller ini akan kita buat di Step 4, jadi biarkan error sebentar kalau filenya belum ada)
+use App\Http\Controllers\Warek\KonselingController as WarekKonselingController;
+use App\Http\Controllers\Dosen\CurhatController as CurhatDosenController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,6 +49,36 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('assign-roles', [RoleAssignmentController::class, 'index'])->name('roles.index');
     Route::get('assign-roles/{user}/edit', [RoleAssignmentController::class, 'edit'])->name('roles.edit');
     Route::put('assign-roles/{user}', [RoleAssignmentController::class, 'update'])->name('roles.update');
+});
+
+// ======================== [UPDATED] WAREK ROUTES ========================
+Route::middleware(['auth', 'verified', 'role:warek'])->prefix('warek')->name('warek.')->group(function () {
+    
+    // 1. DASHBOARD (BARU)
+    Route::get('/dashboard', [WarekKonselingController::class, 'dashboard'])->name('dashboard');
+
+    // 2. INBOX & OPERASIONAL
+    Route::get('/konseling', [WarekKonselingController::class, 'index'])->name('konseling.index');
+    Route::get('/riwayat', [WarekKonselingController::class, 'riwayat'])->name('konseling.riwayat');
+    
+    // ... route show & update biarkan sama ...
+    Route::get('/konseling/{konseling}', [WarekKonselingController::class, 'show'])->name('konseling.show');
+    Route::put('/konseling/{konseling}', [WarekKonselingController::class, 'update'])->name('konseling.update');
+});
+
+// ======================== [UPDATED] DOSEN CURHAT ROUTES ========================
+Route::middleware(['auth', 'verified'])->prefix('dosen')->name('dosen.')->group(function () {
+    // Pengajuan Aktif
+    Route::get('/curhat', [CurhatDosenController::class, 'index'])->name('curhat.index');
+    
+    // Riwayat Selesai
+    Route::get('/curhat/riwayat', [CurhatDosenController::class, 'riwayat'])->name('curhat.riwayat');
+    
+    // Detail (Lihat Hasil) -- [TAMBAHAN BARU]
+    Route::get('/curhat/{konseling}', [CurhatDosenController::class, 'show'])->name('curhat.show');
+    
+    Route::get('/curhat/create', [CurhatDosenController::class, 'create'])->name('curhat.create');
+    Route::post('/curhat', [CurhatDosenController::class, 'store'])->name('curhat.store');
 });
 
 // ================== DOSEN KONSELING ROUTES ==================

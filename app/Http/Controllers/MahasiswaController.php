@@ -4,38 +4,59 @@ namespace App\Http\Controllers;
 
 use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
 
 class MahasiswaController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar mahasiswa.
      */
-    public function index(): View
+    public function index(Request $request)
     {
-        // Ambil data mahasiswa dengan pagination, urutkan berdasarkan angkatan terbaru, lalu nama.
-        // Eager load relasi 'prodi' untuk menghindari N+1 query problem.
-        $mahasiswa = Mahasiswa::with('prodi')
-            ->orderBy('angkatan', 'desc')
-            ->orderBy('nm_mhs', 'asc')
-            ->paginate(15); // Ambil 15 data per halaman
+        // Load relasi prodi agar tidak query berulang (N+1 Problem)
+        $query = Mahasiswa::query()->with('prodi'); 
 
-        // Kirim data ke view
-        return view('mahasiswa.index', compact('mahasiswa'));
+        // Logika Pencarian
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nm_mhs', 'like', "%{$search}%")
+                  ->orWhere('nim', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Urutkan berdasarkan Nama
+        $mahasiswa = $query->orderBy('nm_mhs', 'asc')->paginate(10);
+
+        return view('admin.mahasiswa.index', compact('mahasiswa'));
     }
 
     /**
-     * Display the specified resource for API requests.
-     * Ini akan digunakan oleh modal detail.
+     * Menampilkan Form Tambah (Jika diperlukan nanti)
      */
-    public function show(Mahasiswa $mahasiswa): JsonResponse
+    public function create()
     {
-        // Load relasi prodi untuk memastikan datanya ada
-        $mahasiswa->load('prodi');
-        return response()->json($mahasiswa);
+        return view('admin.mahasiswa.create');
     }
 
-    // Method create, store, edit, update, destroy bisa dibiarkan kosong untuk saat ini
-    // karena kita tidak menggunakannya.
+    /**
+     * MENAMPILKAN DETAIL LENGKAP MAHASISWA [FITUR BARU]
+     */
+    public function show(Mahasiswa $mahasiswa)
+    {
+        // Load relasi prodi dan dosen wali biar datanya lengkap di view
+        $mahasiswa->load(['prodi', 'dosenWali']);
+        
+        return view('admin.mahasiswa.show', compact('mahasiswa'));
+    }
+
+    /**
+     * Menampilkan Form Edit
+     */
+    public function edit(Mahasiswa $mahasiswa)
+    {
+        return view('admin.mahasiswa.edit', compact('mahasiswa'));
+    }
+
+    // Method store, update, destroy bisa ditambahkan sesuai kebutuhan...
 }

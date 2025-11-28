@@ -2,47 +2,44 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Mahasiswa extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'mahasiswa';
     protected $primaryKey = 'nim';
-    public $incrementing = false;
+    public $incrementing = false; 
     protected $keyType = 'string';
 
-    // Dengan guarded kosong, semua atribut bisa diisi secara massal.
-    // Ini lebih fleksibel daripada mendaftarkan satu per satu di $fillable.
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'tgl_lahir' => 'date',
+            'tgl_masuk_kuliah' => 'date',
+            'tgl_sk_yudisium' => 'date',
+        ];
+    }
+
+    /**
+     * Relasi ke Program Studi
+     */
     public function prodi(): BelongsTo
     {
         return $this->belongsTo(Prodi::class, 'id_prodi', 'id_prodi');
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'email', 'email');
-    }
-
     /**
-     * Mendapatkan dosen wali dari mahasiswa ini.
+     * Relasi ke Dosen Wali (Pembimbing Akademik)
+     * PERBAIKAN: Hubungkan ke 'email_dos' karena ID yang disimpan adalah Email
      */
     public function dosenWali(): BelongsTo
     {
         return $this->belongsTo(Dosen::class, 'id_dosen_wali', 'email_dos');
-    }
-
-    /**
-     * Mendapatkan semua riwayat konseling mahasiswa ini.
-     */
-    public function konseling(): HasMany
-    {
-        return $this->hasMany(Konseling::class, 'nim_mahasiswa', 'nim');
     }
 }

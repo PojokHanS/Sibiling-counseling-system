@@ -506,7 +506,7 @@
         Dapatkan ruang curhat yang aman, nyaman, dan penuh empati bersama konselor profesional kami.
       </p>
       <a href="{{ route('login') }}" class="btn">
-        Yok Konseling
+        Mari Konseling
         <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
         </svg>

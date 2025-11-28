@@ -2,57 +2,61 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
-use App\Http\Controllers\Controller;
 
 class RoleAssignmentController extends Controller
 {
+    /**
+     * Menampilkan daftar Dosen untuk manajemen Role.
+     */
     public function index(Request $request)
     {
-        $query = $request->input('query');
+        // Query Dasar: Ambil User yang punya data di tabel 'dosen' (Relasi 'dosen' ada di Model User)
+        // Kita juga load 'roles' biar tidak query berulang di view
+        $query = User::has('dosen')->with('roles');
 
-        $users = User::query()
-            ->whereHas('dosen') 
-            ->when($query, function ($q, $search) {
-                return $q->where('email', 'like', "%{$search}%")
-                         ->orWhereHas('dosen', function ($q_dosen) use ($search) {
-                             // ================== PERBAIKAN DI SINI ==================
-                             $q_dosen->where('nm_dos', 'like', "%{$search}%")
-                                     ->orWhere('nidn', 'like', "%{$search}%");
-                         });
-            })
-            ->with('roles', 'dosen')
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        // Fitur Pencarian (Search)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Ambil data dengan pagination (10 per halaman)
+        $users = $query->paginate(10);
 
         return view('admin.roles.index', compact('users'));
     }
 
+    /**
+     * Menampilkan form edit role user tertentu.
+     */
     public function edit(User $user)
     {
-        $user->load('dosen'); 
-        $roles = Role::where('name', 'like', 'dosen_%')->get();
-        
+        // Ambil semua role yang tersedia untuk ditampilkan di checkbox
+        $roles = Role::all();
         return view('admin.roles.edit', compact('user', 'roles'));
     }
 
+    /**
+     * Menyimpan perubahan role.
+     */
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'roles' => 'sometimes|array'
+            'roles' => 'array'
         ]);
 
-        $dosenRoles = Role::where('name', 'like', 'dosen_%')->pluck('name')->toArray();
-        
-        $user->removeRole(...$dosenRoles);
+        // Sinkronisasi Role (Hapus yang lama, pasang yang baru sesuai checkbox)
+        // Jika tidak ada yang dicentang, rolenya jadi kosong (User biasa)
+        $user->syncRoles($request->input('roles', []));
 
-        if ($request->has('roles')) {
-            $user->assignRole($request->roles);
-        }
-
-        return redirect()->route('admin.roles.index')->with('success', 'Roles untuk ' . ($user->dosen->nm_dos ?? $user->name) . ' berhasil diperbarui.');
+        return redirect()->route('admin.roles.index')
+            ->with('success', 'Jabatan pengguna berhasil diperbarui.');
     }
 }
