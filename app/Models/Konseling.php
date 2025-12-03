@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany; // <-- PASTIKAN HasMany DI-IMPORT
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Konseling extends Model
 {
@@ -16,9 +16,9 @@ class Konseling extends Model
     protected $primaryKey = 'id_konseling';
     public $timestamps = false;
 
-    // ================== ARRAY $fillable YANG SUDAH BERSIH ==================
+    // ================== SEMUA KOLOM (LAMA & BARU) ==================
     protected $fillable = [
-        // Kolom Asli
+        // 1. Kolom Database Lama
         'nim_mahasiswa', 
         'id_dosen_wali', 
         'tgl_pengajuan', 
@@ -29,48 +29,65 @@ class Konseling extends Model
         'harapan_konseling', 
         'alasan_penolakan',
         
-        // Kolom dari Form SOP Dosen Wali (Tetap dipakai)
+        // 2. Kolom SOP Dosen Wali
         'aspek_permasalahan', 
         'permasalahan_segera', 
         'upaya_dilakukan', 
         'harapan_pa',
         
-        // Kolom dari Form Mahasiswa (Rencana Baru)
+        // 3. Kolom Form Mahasiswa (Modern)
         'deskripsi_masalah',
         'tujuan_konseling', 
-        'persetujuan_diberikan_pada', // Untuk Informed Consent
-        'tipe_konseli',               // Untuk "Konseli Baru" / "Lama"
-        'jenis_permasalahan',         // Untuk Checkbox "Sosial, Belajar, Karir, Pribadi"
-        'asesmen_k10',                // Untuk 10 pertanyaan K10 (JSON)
-
-        // Kolom 'hasil_asesmen' yang lama kita HILANGKAN karena diganti 'asesmen_k10'
-        // Kolom 'bidang_layanan' & 'jenis_konseli' kita HILANGKAN karena salah
+        'persetujuan_diberikan_pada', 
+        'tipe_konseli',               
+        'jenis_permasalahan',         
+        'asesmen_k10',                
     ];
-    // ================== BATAS PERUBAHAN ==================
 
     protected $casts = [
         'tgl_pengajuan' => 'date',
         'aspek_permasalahan' => 'json',
-        
-        // --- TAMBAHAN CASTS BARU ---
-        'jenis_permasalahan' => 'json', // Cast kolom baru sebagai JSON
-        'asesmen_k10' => 'json',        // Cast kolom baru sebagai JSON
-        // 'hasil_asesmen' => 'json', // Cast lama yang kita HILANGKAN
+        'jenis_permasalahan' => 'json', 
+        'asesmen_k10' => 'json',        
     ];
 
+    /**
+     * Relasi ke Mahasiswa
+     */
     public function mahasiswa(): BelongsTo
     {
         return $this->belongsTo(Mahasiswa::class, 'nim_mahasiswa', 'nim');
     }
     
-    // Relasi ini sudah benar, jangan diubah
+    /**
+     * Relasi ke Jadwal Sesi (Banyak jadwal)
+     */
     public function jadwalSesi(): HasMany
     {
         return $this->hasMany(JadwalKonseling::class, 'id_konseling', 'id_konseling');
     }
 
+    /**
+     * Relasi ke Dosen Wali
+     */
     public function dosenWali(): BelongsTo
     {
         return $this->belongsTo(Dosen::class, 'id_dosen_wali', 'email_dos');
+    }
+
+    /**
+     * Relasi ke Hasil Konseling (FIX ERROR 500)
+     * Menggunakan HasOneThrough: Konseling -> Jadwal -> Hasil
+     */
+    public function hasilKonseling(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            HasilKonseling::class,      // Model Tujuan (Hasil)
+            JadwalKonseling::class,     // Model Perantara (Jadwal)
+            'id_konseling',             // FK di tabel Jadwal (menunjuk ke Konseling)
+            'id_jadwal',                // FK di tabel Hasil (menunjuk ke Jadwal)
+            'id_konseling',             // Local Key di tabel Konseling
+            'id_jadwal'                 // Local Key di tabel Jadwal (Primary Key: id_jadwal) <--- PERBAIKAN DISINI
+        );
     }
 }

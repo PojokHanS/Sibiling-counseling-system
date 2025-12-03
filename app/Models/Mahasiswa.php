@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class Mahasiswa extends Model
 {
     use HasFactory;
@@ -27,6 +27,16 @@ class Mahasiswa extends Model
     }
 
     /**
+     * Relasi ke User (Akun Login)
+     * PENTING: Menghubungkan data mahasiswa ke tabel users via email.
+     */
+    public function user(): BelongsTo
+    {
+        // Parameter: (Model Tujuan, Foreign Key di tabel ini, Owner Key di tabel tujuan)
+        return $this->belongsTo(User::class, 'email', 'email');
+    }
+
+    /**
      * Relasi ke Program Studi
      */
     public function prodi(): BelongsTo
@@ -36,7 +46,6 @@ class Mahasiswa extends Model
 
     /**
      * Relasi ke Dosen Wali (Pembimbing Akademik)
-     * PERBAIKAN: Hubungkan ke 'email_dos' karena ID yang disimpan adalah Email
      */
     public function dosenWali(): BelongsTo
     {

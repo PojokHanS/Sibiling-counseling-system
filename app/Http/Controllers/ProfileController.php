@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // <-- PENTING
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -26,13 +27,42 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        
+        // 1. Validasi Tambahan (Foto & No HP)
+        $request->validate([
+            'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
+            'no_hp' => ['nullable', 'string', 'max:15'],
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // 2. Isi data standar (nama/email)
+        $user->fill($request->validated());
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // 3. LOGIKA UPLOAD FOTO PROFIL
+        if ($request->hasFile('avatar')) {
+            // Hapus foto lama jika bukan default/kosong
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            // Simpan foto baru
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $path;
+        }
+
+        // Simpan perubahan User
+        $user->save();
+
+        // 4. UPDATE NO HP MAHASISWA (Jika user adalah mahasiswa)
+        if ($request->has('no_hp') && $user->mahasiswa) {
+            $user->mahasiswa->update([
+                'no_hp' => $request->no_hp
+            ]);
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

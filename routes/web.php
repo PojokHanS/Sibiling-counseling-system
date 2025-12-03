@@ -6,8 +6,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\Admin\RoleAssignmentController;
-
-// --- CONTROLLER BARU KITA ---
 use App\Http\Controllers\PublicController;
 
 // Dosen Konseling Feature Controllers
@@ -23,7 +21,7 @@ use App\Http\Controllers\DosenPembimbing\RekomendasiController;
 use App\Http\Controllers\Mahasiswa\PengajuanController as MahasiswaPengajuanController;
 use App\Http\Controllers\Mahasiswa\RiwayatController as MahasiswaRiwayatController;
 
-// Controller Fitur Lanjutan (Akan dibuat nanti)
+// Controller Fitur Lanjutan
 use App\Http\Controllers\Warek\KonselingController as WarekKonselingController;
 use App\Http\Controllers\Dosen\CurhatController as CurhatDosenController;
 
@@ -33,16 +31,14 @@ use App\Http\Controllers\Dosen\CurhatController as CurhatDosenController;
 |--------------------------------------------------------------------------
 */
 
-// ================== PUBLIC ROUTES (HALAMAN DEPAN) ==================
-// Ini adalah rute untuk halaman yang bisa diakses siapa saja (Tamu)
+// ================== PUBLIC ROUTES ==================
 Route::controller(PublicController::class)->group(function () {
-    Route::get('/', 'welcome')->name('welcome'); // Home
-    Route::get('/landasan-hukum', 'landasanHukum')->name('public.landasan'); // SK & SOP
-    Route::get('/tentang-kami', 'tentangKami')->name('public.tentang'); // Tim Pengembang
+    Route::get('/', 'welcome')->name('welcome');
+    Route::get('/landasan-hukum', 'landasanHukum')->name('public.landasan');
+    Route::get('/tentang-kami', 'tentangKami')->name('public.tentang');
 });
-// ===================================================================
 
-// ================== MAIN DASHBOARD (SAMA UNTUK SEMUA ROLE) ==================
+// ================== MAIN DASHBOARD ==================
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -57,7 +53,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('dosen', DosenController::class);
     Route::resource('mahasiswa', MahasiswaController::class);
-
     Route::get('assign-roles', [RoleAssignmentController::class, 'index'])->name('roles.index');
     Route::get('assign-roles/{user}/edit', [RoleAssignmentController::class, 'edit'])->name('roles.edit');
     Route::put('assign-roles/{user}', [RoleAssignmentController::class, 'update'])->name('roles.update');
@@ -72,13 +67,17 @@ Route::middleware(['auth', 'verified', 'role:warek'])->prefix('warek')->name('wa
     Route::put('/konseling/{konseling}', [WarekKonselingController::class, 'update'])->name('konseling.update');
 });
 
-// ======================== DOSEN CURHAT ROUTES ========================
+// ======================== DOSEN CURHAT ROUTES (FIX 404 HERE) ========================
 Route::middleware(['auth', 'verified'])->prefix('dosen')->name('dosen.')->group(function () {
     Route::get('/curhat', [CurhatDosenController::class, 'index'])->name('curhat.index');
     Route::get('/curhat/riwayat', [CurhatDosenController::class, 'riwayat'])->name('curhat.riwayat');
-    Route::get('/curhat/{konseling}', [CurhatDosenController::class, 'show'])->name('curhat.show');
-    Route::get('/curhat/create', [CurhatDosenController::class, 'create'])->name('curhat.create');
+    
+    // PERHATIKAN: 'create' HARUS DI ATAS '{konseling}' (show)
+    Route::get('/curhat/create', [CurhatDosenController::class, 'create'])->name('curhat.create'); 
     Route::post('/curhat', [CurhatDosenController::class, 'store'])->name('curhat.store');
+    
+    // Wildcard route ditaruh paling bawah dalam grup ini
+    Route::get('/curhat/{konseling}', [CurhatDosenController::class, 'show'])->name('curhat.show');
 });
 
 // ================== DOSEN KONSELING ROUTES ==================
@@ -105,6 +104,7 @@ Route::middleware(['auth', 'verified', 'role:dosen_pembimbing'])->prefix('dosen-
     Route::post('/rekomendasi', [RekomendasiController::class, 'store'])->name('rekomendasi.store');
     Route::get('/rekomendasi/{rekomendasi}/edit', [RekomendasiController::class, 'edit'])->name('rekomendasi.edit');
     Route::put('/rekomendasi/{rekomendasi}', [RekomendasiController::class, 'update'])->name('rekomendasi.update');
+    Route::get('/riwayat-rekomendasi', [RekomendasiController::class, 'riwayat'])->name('rekomendasi.riwayat');
 });
 
 // ================== MAHASISWA ROUTES ==================

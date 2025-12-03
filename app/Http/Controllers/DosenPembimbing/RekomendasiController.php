@@ -11,67 +11,91 @@ use Carbon\Carbon;
 
 class RekomendasiController extends Controller
 {
+    /**
+     * Menampilkan DAFTAR REKOMENDASI yang pernah diajukan (FIX LOGIC).
+     */
     public function index()
     {
-        return redirect()->route('dosen-pembimbing.mahasiswa');
+        // 1. Ambil data dosen login
+        $dosen = Auth::user()->dosen;
+
+        // 2. Ambil data konseling (khusus sumber_pengajuan = dosen_pa)
+        $daftarRekomendasi = Konseling::where('id_dosen_wali', $dosen->email_dos)
+            ->where('sumber_pengajuan', 'dosen_pa') // Hanya yang rekomendasi
+            ->with(['mahasiswa.user', 'mahasiswa.prodi']) // Load data relasi
+            ->latest('tgl_pengajuan')
+            ->paginate(10);
+
+        // 3. Tampilkan View Index (Bukan Redirect lagi)
+        return view('dosen-pembimbing.rekomendasi.index', compact('daftarRekomendasi'));
     }
 
+    /**
+     * Menampilkan riwayat (Bisa pakai logic yang sama dengan index).
+     */
+    public function riwayat()
+    {
+        return $this->index(); 
+    }
+
+    /**
+     * Menampilkan form rekomendasi dengan KEAMANAN KETAT.
+     */
     public function create(Mahasiswa $mahasiswa)
     {
+        $dosen = Auth::user()->dosen;
+
+        // SECURITY CHECK: Pastikan mahasiswa ini benar-benar bimbingannya
+        if ($mahasiswa->id_dosen_wali !== $dosen->email_dos) {
+            abort(403, 'AKSES DITOLAK: Anda bukan Dosen Wali dari mahasiswa ini.');
+        }
+
         return view('dosen-pembimbing.rekomendasi.create', compact('mahasiswa'));
     }
 
     /**
-     * Menyimpan rekomendasi baru ke dalam database sebagai pengajuan konseling.
+     * Menyimpan rekomendasi baru.
      */
     public function store(Request $request)
     {
-        // ================== VALIDASI BARU SESUAI FORM SOP ==================
-        $request->validate([
-            'nim_mahasiswa' => 'required|string|exists:mahasiswa,nim',
-            'aspek_permasalahan' => 'required|array|min:1', // Pastikan minimal satu aspek dipilih
-            'aspek_permasalahan.*' => 'string', // Pastikan semua isinya string
-            'permasalahan_segera' => 'required|string|min:10',
-            'upaya_dilakukan' => 'required|string|min:10',
-            'harapan_pa' => 'required|string|min:10',
-        ]);
-        // ====================================================================
-
         $dosenWali = Auth::user()->dosen;
 
-        // ================== PENYIMPANAN DATA (ALUR BARU) ==================
+        $request->validate([
+            'nim_mahasiswa' => 'required|string|exists:mahasiswa,nim',
+            'aspek_permasalahan' => 'required|array|min:1',
+            'aspek_permasalahan.*' => 'string',
+            'deskripsi_masalah' => 'required|string|min:10', 
+            'harapan_pa' => 'required|string|min:10',
+        ]);
+
+        // SECURITY CHECK LAGI (Anti Tembak API/Postman)
+        $targetMahasiswa = Mahasiswa::where('nim', $request->nim_mahasiswa)->firstOrFail();
+        
+        if ($targetMahasiswa->id_dosen_wali !== $dosenWali->email_dos) {
+            abort(403, 'AKSI ILEGAL: Manipulasi data terdeteksi.');
+        }
+
+        // Simpan Data
         Konseling::create([
             'nim_mahasiswa' => $request->nim_mahasiswa,
             'id_dosen_wali' => $dosenWali->email_dos,
             'tgl_pengajuan' => Carbon::now(),
-            
-            // --- PERUBAHAN KRUSIAL ADA DI SINI ---
-            // Mengubah status agar masuk ke antrian mahasiswa, bukan Dosen Konseling.
-            'status_konseling' => 'Menunggu Kelengkapan Mahasiswa', 
-            // --- BATAS PERUBAHAN ---
-
+            'status_konseling' => 'Menunggu Kelengkapan Mahasiswa', // Status awal rekomendasi
             'sumber_pengajuan' => 'dosen_pa',
-            // Menyimpan data dari form SOP
-            'aspek_permasalahan' => $request->aspek_permasalahan, // Disimpan sebagai JSON/array
-            'permasalahan_segera' => $request->permasalahan_segera,
-            'upaya_dilakukan' => $request->upaya_dilakukan,
+            
+            // Data Detail
+            'aspek_permasalahan' => $request->aspek_permasalahan,
+            'permasalahan_segera' => $request->deskripsi_masalah, 
             'harapan_pa' => $request->harapan_pa,
-            // Menggabungkan aspek menjadi satu teks deskriptif untuk kolom 'permasalahan' utama
-            'permasalahan' => 'Rekomendasi Dosen PA terkait aspek: ' . implode(', ', $request->aspek_permasalahan)
+            'permasalahan' => 'Rekomendasi Dosen PA: ' . $request->deskripsi_masalah, // Ringkasan
+            'upaya_dilakukan' => '-',
         ]);
-        // ========================================================================
 
-        // --- Perubahan pesan sukses untuk mencerminkan alur baru ---
-        return redirect()->route('dosen-pembimbing.mahasiswa')->with('success', 'Rekomendasi konseling telah berhasil dikirim ke mahasiswa untuk dilengkapi.');
+        return redirect()->route('dosen-pembimbing.rekomendasi.index')
+                         ->with('success', 'Rekomendasi berhasil dibuat. Menunggu mahasiswa melengkapi data.');
     }
 
-    public function edit($id)
-    {
-        //
-    }
-
-    public function update(Request $request, $id)
-    {
-        //
-    }
+    // Method bawaan resource (kosongkan jika tidak dipakai)
+    public function edit($id) {}
+    public function update(Request $request, $id) {}
 }
