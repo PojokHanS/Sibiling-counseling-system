@@ -67,16 +67,12 @@ Route::middleware(['auth', 'verified', 'role:warek'])->prefix('warek')->name('wa
     Route::put('/konseling/{konseling}', [WarekKonselingController::class, 'update'])->name('konseling.update');
 });
 
-// ======================== DOSEN CURHAT ROUTES (FIX 404 HERE) ========================
+// ======================== DOSEN CURHAT ROUTES ========================
 Route::middleware(['auth', 'verified'])->prefix('dosen')->name('dosen.')->group(function () {
     Route::get('/curhat', [CurhatDosenController::class, 'index'])->name('curhat.index');
     Route::get('/curhat/riwayat', [CurhatDosenController::class, 'riwayat'])->name('curhat.riwayat');
-    
-    // PERHATIKAN: 'create' HARUS DI ATAS '{konseling}' (show)
     Route::get('/curhat/create', [CurhatDosenController::class, 'create'])->name('curhat.create'); 
     Route::post('/curhat', [CurhatDosenController::class, 'store'])->name('curhat.store');
-    
-    // Wildcard route ditaruh paling bawah dalam grup ini
     Route::get('/curhat/{konseling}', [CurhatDosenController::class, 'show'])->name('curhat.show');
 });
 
@@ -89,6 +85,12 @@ Route::middleware(['auth', 'verified', 'role:dosen_konseling'])->prefix('dosen-k
     Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
     Route::get('/jadwal/create/{pengajuan}', [JadwalController::class, 'create'])->name('jadwal.create');
     Route::post('/jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
+    
+    // --- UPDATE FITUR: EDIT JADWAL ---
+    Route::get('/jadwal/{jadwal}/edit', [JadwalController::class, 'edit'])->name('jadwal.edit');
+    Route::put('/jadwal/{jadwal}', [JadwalController::class, 'update'])->name('jadwal.update');
+    // ---------------------------------
+
     Route::get('/jadwal/{jadwal}/mulai-sesi', [JadwalController::class, 'mulaiSesi'])->name('jadwal.mulaiSesi');
     Route::post('/jadwal/{jadwal}/simpan-sesi', [JadwalController::class, 'simpanSesi'])->name('jadwal.simpanSesi');
 

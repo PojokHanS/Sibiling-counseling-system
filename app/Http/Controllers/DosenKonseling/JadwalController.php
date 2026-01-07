@@ -17,14 +17,21 @@ class JadwalController extends Controller
      */
     public function index()
     {
-        // ================== PERBAIKAN QUERY DI SINI ==================
-        // Ambil hanya jadwal yang BELUM memiliki hasil konseling (yang aktif)
-        $jadwal = JadwalKonseling::where('id_dosen_konseling', Auth::user()->email)
-                                 ->whereDoesntHave('hasilKonseling') // <-- Logika Kunci
+        $dosen = Auth::user()->dosen;
+        
+        if (!$dosen) {
+            abort(403, 'Profil Dosen tidak ditemukan.');
+        }
+
+        $dosenId = $dosen->id_dosen ?? $dosen->id;
+
+        $jadwal = JadwalKonseling::where('id_dosen_konseling', $dosenId)
+                                 ->whereDoesntHave('hasilKonseling')
                                  ->with('konseling.mahasiswa.user')
+                                 ->orderBy('tgl_sesi', 'asc')
                                  ->orderBy('waktu_mulai', 'asc')
                                  ->get();
-        // =============================================================
+
         return view('dosen-konseling.jadwal.index', compact('jadwal'));
     }
 
@@ -42,31 +49,89 @@ class JadwalController extends Controller
     {
         $request->validate([
             'id_konseling' => 'required|exists:konseling,id_konseling',
-            'tanggal_konseling' => 'required|date|after_or_equal:today',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'tanggal_konseling' => 'required|date',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required|after:waktu_mulai',
             'metode_konseling' => 'required|string|in:Online,Offline',
-            'lokasi' => 'nullable|string|required_if:metode_konseling,Offline|max:255',
+            'lokasi' => 'nullable|string', 
         ]);
 
-        $waktu_mulai = Carbon::parse($request->tanggal_konseling . ' ' . $request->waktu_mulai);
-        $waktu_selesai = Carbon::parse($request->tanggal_konseling . ' ' . $request->waktu_selesai);
+        try {
+            $dosen = Auth::user()->dosen;
+            $dosenId = $dosen->id_dosen ?? $dosen->id;
 
-        JadwalKonseling::create([
-            'id_konseling' => $request->id_konseling,
-            'id_dosen_konseling' => Auth::user()->email,
-            'tgl_sesi' => $request->tanggal_konseling,
-            'waktu_mulai' => $waktu_mulai,
-            'waktu_selesai' => $waktu_selesai,
-            'metode_konseling' => $request->metode_konseling,
-            'lokasi' => $request->lokasi,
+            $waktu_mulai = Carbon::parse($request->waktu_mulai)->format('H:i:s');
+            $waktu_selesai = Carbon::parse($request->waktu_selesai)->format('H:i:s');
+
+            JadwalKonseling::create([
+                'id_konseling' => $request->id_konseling,
+                'id_dosen_konseling' => $dosenId,
+                'tgl_sesi' => $request->tanggal_konseling,
+                'waktu_mulai' => $waktu_mulai,
+                'waktu_selesai' => $waktu_selesai,
+                'metode_konseling' => $request->metode_konseling,
+                'lokasi' => $request->lokasi,
+            ]);
+
+            $konseling = Konseling::find($request->id_konseling);
+            $konseling->status_konseling = 'Terjadwal';
+            $konseling->save();
+
+            return redirect()->route('dosen-konseling.jadwal.index')
+                             ->with('success', 'Jadwal konseling berhasil dibuat.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menyimpan jadwal: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function edit(JadwalKonseling $jadwal)
+    {
+         $dosen = Auth::user()->dosen;
+         $dosenId = $dosen->id_dosen ?? $dosen->id;
+
+         if ($jadwal->id_dosen_konseling != $dosenId) {
+             abort(403, 'Anda tidak memiliki akses ke jadwal ini.');
+         }
+ 
+         return view('dosen-konseling.jadwal.edit', compact('jadwal'));
+    }
+
+    public function update(Request $request, JadwalKonseling $jadwal)
+    {
+        $dosen = Auth::user()->dosen;
+        $dosenId = $dosen->id_dosen ?? $dosen->id;
+
+        if ($jadwal->id_dosen_konseling != $dosenId) {
+            abort(403);
+        }
+
+        $request->validate([
+            'tanggal_konseling' => 'required|date',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required|after:waktu_mulai',
+            'metode_konseling' => 'required|string|in:Online,Offline',
+            'lokasi' => 'nullable|string',
         ]);
 
-        $konseling = Konseling::find($request->id_konseling);
-        $konseling->status_konseling = 'Terjadwal';
-        $konseling->save();
+        try {
+            $waktu_mulai = Carbon::parse($request->waktu_mulai)->format('H:i:s');
+            $waktu_selesai = Carbon::parse($request->waktu_selesai)->format('H:i:s');
 
-        return redirect()->route('dosen-konseling.jadwal.index')->with('success', 'Jadwal konseling berhasil dibuat.');
+            $jadwal->update([
+                'tgl_sesi' => $request->tanggal_konseling,
+                'waktu_mulai' => $waktu_mulai,
+                'waktu_selesai' => $waktu_selesai,
+                'metode_konseling' => $request->metode_konseling,
+                'lokasi' => $request->lokasi,
+            ]);
+
+            return redirect()->route('dosen-konseling.jadwal.index')
+                             ->with('success', 'Jadwal berhasil diperbarui.');
+                             
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal update jadwal: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function mulaiSesi(JadwalKonseling $jadwal)
@@ -75,27 +140,45 @@ class JadwalController extends Controller
         return view('dosen-konseling.jadwal.mulai-sesi', compact('jadwal'));
     }
 
+    // ========== FITUR SIMPAN SESI (YANG DIPERBAIKI) ==========
     public function simpanSesi(Request $request, JadwalKonseling $jadwal)
     {
+        // 1. Validasi Input (Harus sesuai dengan name di View mulai-sesi.blade.php)
         $request->validate([
-            'diagnosis' => 'required|string',
-            'prognosis' => 'required|string',
-            'rekomendasi' => 'required|string',
-            'status_akhir' => 'required|string|in:Selesai,Butuh Sesi Lanjutan',
+            'hasil_konseling' => 'required|string|min:5',
+            'rekomendasi' => 'nullable|string',
+            'status_akhir' => 'required|in:Selesai,Butuh Sesi Lanjutan',
         ]);
 
-        HasilKonseling::create([
-            'id_jadwal' => $jadwal->id_jadwal,
-            'diagnosis' => $request->diagnosis,
-            'prognosis' => $request->prognosis,
-            'rekomendasi' => $request->rekomendasi,
-            'evaluasi' => $request->evaluasi,
-        ]);
+        try {
+            // 2. Simpan Hasil Konseling
+            // Menggunakan updateOrCreate untuk mencegah duplikasi jika tombol ditekan 2x
+            HasilKonseling::updateOrCreate(
+                ['id_jadwal' => $jadwal->id_jadwal],
+                [
+                    'id_konseling' => $jadwal->id_konseling,
+                    'tgl_konseling' => Carbon::now(),
+                    'hasil_konseling' => $request->hasil_konseling,
+                    'rekomendasi' => $request->rekomendasi,
+                    // 'diagnosis' => $request->hasil_konseling, // Uncomment jika DB masih butuh kolom legacy
+                ]
+            );
 
-        $konseling = $jadwal->konseling;
-        $konseling->status_konseling = $request->status_akhir;
-        $konseling->save();
-        
-        return redirect()->route('dosen-konseling.kasus.index')->with('success', 'Hasil sesi konseling berhasil disimpan.');
+            // 3. Update Status Sesi Jadwal -> Selesai
+            // Asumsi ada kolom status_sesi di tabel jadwal_konseling (tambahkan jika belum ada di migration)
+            // $jadwal->update(['status_sesi' => 'Selesai']); 
+
+            // 4. Update Status Utama Konseling
+            $konseling = $jadwal->konseling;
+            $konseling->status_konseling = $request->status_akhir;
+            $konseling->save();
+
+            return redirect()->route('dosen-konseling.kasus.index')
+                             ->with('success', 'Hasil sesi konseling berhasil disimpan dan status diperbarui.');
+
+        } catch (\Exception $e) {
+            // TANGKAP ERROR SQL: Ini akan memberi tahu kalau ada kolom database yang kurang
+            return back()->with('error', 'Gagal menyimpan sesi: ' . $e->getMessage())->withInput();
+        }
     }
 }

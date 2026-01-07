@@ -14,21 +14,24 @@ class HasilKonseling extends Model
     protected $primaryKey = 'id_hasil';
     public $timestamps = false;
 
+    // FIX: Tambahkan semua kolom baru agar bisa disimpan
     protected $fillable = [
         'id_jadwal',
-        'diagnosis',
-        'prognosis',
+        'id_konseling',
+        'tgl_konseling',
+        'hasil_konseling', // <--- INI YANG HILANG SEBELUMNYA
         'rekomendasi',
-        'evaluasi',
+        'diagnosis',      // Legacy
+        'prognosis',      // Legacy
+        'evaluasi',       // Legacy
     ];
 
-    // ================== RELASI BARU DITAMBAHKAN DI SINI ==================
-    /**
-     * Get the jadwal konseling that owns the hasil.
-     */
+    protected $casts = [
+        'tgl_konseling' => 'datetime',
+    ];
+
     public function jadwalKonseling(): BelongsTo
     {
         return $this->belongsTo(JadwalKonseling::class, 'id_jadwal', 'id_jadwal');
     }
-    // ====================================================================
 }

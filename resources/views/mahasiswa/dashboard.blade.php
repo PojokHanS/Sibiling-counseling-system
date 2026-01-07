@@ -82,55 +82,72 @@
                     @if ($konselingTerakhir)
                         @php
                             $status = $konselingTerakhir->status_konseling;
-                            // Kita mapping warna & icon biar lebih spesifik
+                            
+                            // MAPPING STATUS (DIPERBAIKI UNTUK ALUR DOSEN WALI)
                             $statusConfig = match($status) {
+                                'Menunggu Kelengkapan Mahasiswa' => [ // <--- FIXED: Status Baru
+                                    'bg' => 'bg-indigo-50', 'border' => 'border-indigo-200', 'text' => 'text-indigo-800',
+                                    'icon' => '<svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>',
+                                    'title' => 'Butuh Tindakan Anda',
+                                    'desc' => 'Dosen Wali merekomendasikan konseling. Harap lengkapi formulir untuk melanjutkan.',
+                                    'action_route' => route('mahasiswa.pengajuan.lengkapi', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lengkapi Data'
+                                ],
                                 'Menunggu Verifikasi' => [
                                     'bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-800',
                                     'icon' => '<svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                                     'title' => 'Menunggu Verifikasi',
-                                    'desc' => 'Pengajuan Anda sedang ditinjau oleh tim konseling. Mohon bersabar ya.'
+                                    'desc' => 'Pengajuan Anda sedang ditinjau oleh tim konseling. Mohon bersabar ya.',
+                                    'action_route' => route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lihat Detail'
                                 ],
                                 'Disetujui' => [
                                     'bg' => 'bg-emerald-50', 'border' => 'border-emerald-200', 'text' => 'text-emerald-800',
                                     'icon' => '<svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                                     'title' => 'Disetujui',
-                                    'desc' => 'Kabar baik! Pengajuan disetujui. Tunggu informasi jadwal selanjutnya.'
+                                    'desc' => 'Kabar baik! Pengajuan disetujui. Tunggu informasi jadwal selanjutnya.',
+                                    'action_route' => route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lihat Detail'
                                 ],
-                                'Terjadwal' => [ // Atau 'Dijadwalkan' (sesuaikan enum database)
+                                'Terjadwal', 'Dijadwalkan' => [ 
                                     'bg' => 'bg-blue-50', 'border' => 'border-blue-200', 'text' => 'text-blue-800',
                                     'icon' => '<svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>',
                                     'title' => 'Sudah Dijadwalkan',
-                                    'desc' => 'Jadwal sesi konseling telah keluar. Cek detailnya sekarang!'
-                                ],
-                                'Dijadwalkan' => [ 
-                                    'bg' => 'bg-blue-50', 'border' => 'border-blue-200', 'text' => 'text-blue-800',
-                                    'icon' => '<svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>',
-                                    'title' => 'Sudah Dijadwalkan',
-                                    'desc' => 'Jadwal sesi konseling telah keluar. Cek detailnya sekarang!'
+                                    'desc' => 'Jadwal sesi konseling telah keluar. Cek detailnya sekarang!',
+                                    'action_route' => route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lihat Jadwal'
                                 ],
                                 'Selesai' => [
                                     'bg' => 'bg-purple-50', 'border' => 'border-purple-200', 'text' => 'text-purple-800',
                                     'icon' => '<svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>',
                                     'title' => 'Selesai',
-                                    'desc' => 'Sesi konseling telah selesai. Semoga membantu permasalahan Anda.'
+                                    'desc' => 'Sesi konseling telah selesai. Semoga membantu permasalahan Anda.',
+                                    'action_route' => route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lihat Hasil'
                                 ],
                                 'Ditolak' => [
                                     'bg' => 'bg-red-50', 'border' => 'border-red-200', 'text' => 'text-red-800',
                                     'icon' => '<svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                                     'title' => 'Ditolak',
-                                    'desc' => 'Pengajuan tidak dapat dilanjutkan. Silakan cek detail untuk alasannya.'
+                                    'desc' => 'Pengajuan tidak dapat dilanjutkan. Silakan cek detail untuk alasannya.',
+                                    'action_route' => route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Lihat Detail'
                                 ],
                                 'Perlu Revisi' => [
                                     'bg' => 'bg-yellow-50', 'border' => 'border-yellow-200', 'text' => 'text-yellow-800',
                                     'icon' => '<svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>',
                                     'title' => 'Perlu Revisi',
-                                    'desc' => 'Ada data yang perlu Anda perbaiki. Segera lakukan revisi.'
+                                    'desc' => 'Ada data yang perlu Anda perbaiki. Segera lakukan revisi.',
+                                    'action_route' => route('mahasiswa.pengajuan.edit', $konselingTerakhir->id_konseling),
+                                    'action_label' => 'Perbaiki Data'
                                 ],
                                 default => [
                                     'bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-800',
                                     'icon' => '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                                     'title' => 'Status Tidak Dikenal',
-                                    'desc' => 'Hubungi admin jika status tidak berubah.'
+                                    'desc' => 'Hubungi admin jika status tidak berubah.',
+                                    'action_route' => route('mahasiswa.riwayat.index'),
+                                    'action_label' => 'Lihat Detail'
                                 ],
                             };
                         @endphp
@@ -148,9 +165,9 @@
                                 </p>
                             </div>
                             <div class="mt-4 sm:mt-0">
-                                <a href="{{ route('mahasiswa.riwayat.show', $konselingTerakhir->id_konseling) }}" 
+                                <a href="{{ $statusConfig['action_route'] }}" 
                                    class="inline-flex items-center px-5 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                    Lihat Detail
+                                    {{ $statusConfig['action_label'] }}
                                 </a>
                             </div>
                         </div>
