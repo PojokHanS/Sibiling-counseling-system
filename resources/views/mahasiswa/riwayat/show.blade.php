@@ -271,6 +271,27 @@
                     <span class="inline-block px-6 py-2 rounded-full text-lg font-extrabold border ring-4 {{ $statusClass }}">
                         {{ strtoupper($konseling->status_konseling) }}
                     </span>
+                    
+                    {{-- TOMBOL SURVEI LOGIC --}}
+                    @if($konseling->status_konseling == 'Selesai')
+                        <div class="mt-6 pt-6 border-t border-gray-100">
+                            @if($konseling->surveiKepuasan)
+                                <a href="{{ route('mahasiswa.survei.download', $konseling->id_konseling) }}" class="block w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg hover:shadow-emerald-200 transition mb-2">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        Download Bukti
+                                    </div>
+                                </a>
+                                <p class="text-xs text-emerald-600 font-medium">Anda sudah mengisi survei evaluasi.</p>
+                            @else
+                                <a href="{{ route('mahasiswa.survei.create', $konseling->id_konseling) }}" class="block w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg hover:shadow-blue-200 transition animate-pulse">
+                                    Isi Survei Evaluasi
+                                </a>
+                                <p class="text-xs text-gray-500 mt-2">Wajib diisi untuk unduh bukti.</p>
+                            @endif
+                        </div>
+                    @endif
+                    
                     <p class="text-xs text-gray-400 mt-3">
                         Terakhir diperbarui: {{ optional($konseling->updated_at)->diffForHumans() ?? '-' }}
                     </p>

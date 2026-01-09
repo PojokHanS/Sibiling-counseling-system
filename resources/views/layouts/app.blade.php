@@ -7,138 +7,190 @@
 
     <title>{{ config('app.name', 'SIBILING UBBG') }}</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
+    {{-- Fonts --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    {{-- Scripts & Styles --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        :root{
-            --bg-cream:#FFFCF9;--bg-green-light:#EAF7F2;--bg-green-dark:#2BA172;--bg-green-darker:#23865F;
-            --text-dark:#111827;--text-gray:#6B7280;--text-light:#9CA3AF;--border-light:#E5E7EB;
-            --shadow-sm:0 2px 8px rgba(0,0,0,.05);--shadow-md:0 8px 24px rgba(0,0,0,.08);--shadow-lg:0 20px 40px rgba(0,0,0,.06)
+        /* --- CRITICAL CSS FOR LOADER (Agar loading instan tanpa menunggu Tailwind) --- */
+        :root {
+            --ubbg-green: #047857;
+            --ubbg-dark: #064e3b;
+            --cream-bg: #F8FAFC;
         }
-        .font-sans{font-family:'Inter',sans-serif}
-        .sidebar-modern{background:linear-gradient(180deg,var(--bg-green-dark) 0%,var(--bg-green-darker) 100%);box-shadow:var(--shadow-lg)}
-        .menu-hover{transition:.3s;color:rgba(255,255,255,.85)}
-        .menu-hover:hover{background:rgba(255,255,255,.18);color:#fff;transform:translateX(4px)}
-        .menu-active{background:rgba(255,255,255,.24);color:#fff;border-left:4px solid #fff}
-        .logo-text{background:linear-gradient(135deg,#fff 0%,#EAF7F2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800}
-        .main-content{background:var(--bg-cream)}
-        .header-modern{background:#fff;box-shadow:var(--shadow-sm);border-bottom:1px solid var(--border-light)}
-        .user-dropdown{background:rgba(255,255,255,.98);backdrop-filter:blur(10px);border:1px solid rgba(0,0,0,.04)}
-        .icon-primary{color:#fff}
-        
-        /* SCROLLBAR CANTIK */
-        .sidebar-scroll::-webkit-scrollbar{width:4px}
-        .sidebar-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.1);border-radius:10px}
-        .sidebar-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);border-radius:10px}
-        
-        /* Main Content Scrollbar */
-        .main-scroll::-webkit-scrollbar{width:6px; height: 6px;}
-        .main-scroll::-webkit-scrollbar-track{background:transparent;}
-        .main-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px;}
-        .main-scroll::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
 
-        .sidebar-transition{transition:all .3s cubic-bezier(.4,0,.2,1)}
-        .role-badge{background:rgba(255,255,255,.2);color:#fff;font-size:.7rem;padding:.25rem .5rem;border-radius:12px;margin-top:.25rem}
-        
-        /* LOADER */
-        .premium-loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, var(--bg-green-dark) 0%, var(--bg-green-darker) 100%);
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--cream-bg);
+            margin: 0; padding: 0;
+            overflow: hidden; /* Prevent scroll saat loading */
+        }
+
+        /* PREMIUM LOADER STYLE */
+        #app-loader {
+            position: fixed; inset: 0; z-index: 99999;
+            background: #ffffff;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1); /* Ease In Out Quart */
         }
-        .premium-loader.active { opacity: 1; visibility: visible; }
+
+        .loader-logo-wrapper {
+            position: relative;
+            width: 100px; height: 100px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(4, 120, 87, 0.15);
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
         .loader-logo {
-            width: 80px; height: 80px; background: white; border-radius: 20px;
-            display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: logoBounce 2s ease-in-out infinite;
+            width: 60px; height: auto;
+            animation: pulse-logo 2s infinite;
         }
-        .loader-logo span { font-size: 2rem; font-weight: 800; color: var(--bg-green-dark); }
-        .loader-content { text-align: center; color: white; }
-        .loader-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; opacity: 0; animation: fadeInUp 0.8s 0.5s ease forwards; }
-        .loader-subtext { font-size: 1rem; opacity: 0.9; margin-bottom: 2rem; opacity: 0; animation: fadeInUp 0.8s 0.7s ease forwards; }
-        .loader-progress { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
-        .loader-progress-bar { height: 100%; background: white; border-radius: 10px; animation: progressLoad 2s ease-in-out infinite; }
-        @keyframes logoBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes progressLoad { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
-        .navigation-loading { position: relative; pointer-events: none; }
-        .navigation-loading::after {
-            content: ''; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
-            width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid currentColor;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
+
+        .loader-text {
+            font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px;
+            color: var(--ubbg-green);
+            opacity: 0; transform: translateY(10px);
+            animation: fadeUp 0.8s ease-out 0.3s forwards;
         }
-        @keyframes spin { 0% { transform: translateY(-50%) rotate(0deg); } 100% { transform: translateY(-50%) rotate(360deg); } }
-        
-        @media (max-width:1023px){ .offcanvas { position:fixed; inset:0 auto 0 0; height:100vh; } }
+
+        .loader-subtext {
+            font-size: 0.875rem; color: #64748b; font-weight: 500;
+            margin-top: 5px; opacity: 0;
+            animation: fadeUp 0.8s ease-out 0.5s forwards;
+        }
+
+        /* Animation States */
+        body.loaded #app-loader {
+            transform: translateY(-100%); /* Curtain Effect */
+        }
+
+        body.loaded {
+            overflow: auto; /* Enable scroll after load */
+        }
+
+        @keyframes pulse-logo {
+            0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(4,120,87,0)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 10px rgba(4,120,87,0.2)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(4,120,87,0)); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-{{-- PERBAIKAN 1: Tambahkan h-screen dan overflow-hidden di body --}}
-<body class="font-sans antialiased bg-gray-50 h-screen overflow-hidden">
+<body class="antialiased h-screen flex overflow-hidden bg-slate-50 selection:bg-emerald-500 selection:text-white">
 
-<div id="premiumLoader" class="premium-loader">
-    <div class="loader-logo"><span>S</span></div>
-    <div class="loader-content">
-        <div class="loader-text">SIBILING UBBG</div>
-        <div class="loader-subtext">Memuat konten...</div>
-        <div class="loader-progress"><div class="loader-progress-bar"></div></div>
-    </div>
-</div>
-
-{{-- PERBAIKAN 2: Wrapper utama h-screen dan overflow-hidden --}}
-<div x-data="{ 
-    open:true, 
-    mobileOpen:false,
-    showLoading(url) {
-        const loader = document.getElementById('premiumLoader');
-        loader.classList.add('active');
-        event.target.classList.add('navigation-loading');
-        setTimeout(() => { window.location.href = url; }, 800);
-    }
-}" class="flex h-screen w-full overflow-hidden">
-
-    <div x-show="mobileOpen" @click="mobileOpen=false"
-         class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-         x-transition.opacity></div>
-
-    @include('layouts.sidebar')
-
-    {{-- PERBAIKAN 3: flex-1, flex-col, dan h-screen agar konten bisa scroll sendiri --}}
-    <div class="flex-1 flex flex-col h-screen overflow-hidden main-content lg:ml-0 transition-all duration-300 relative">
+    {{-- --- PREMIUM LOADER --- --}}
+    <div id="app-loader">
+        <div class="loader-logo-wrapper">
+            {{-- Pastikan logo ada di public/images/logo-ubbg.png --}}
+            <img src="{{ asset('images/logo-ubbg.png') }}" alt="UBBG Logo" class="loader-logo">
+        </div>
+        <div class="loader-text">SIBILING v2</div>
+        <div class="loader-subtext">Sistem Bimbingan Konseling UBBG</div>
         
-        <div class="lg:hidden header-modern px-4 py-3 flex items-center justify-between shrink-0">
-            <button @click="mobileOpen=true" class="p-2 rounded-lg hover:bg-gray-100">
-                <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-            <div class="text-lg font-semibold text-gray-800">SIBILING UBBG</div>
-            <div class="w-10"></div>
+        {{-- Progress Bar Kecil --}}
+        <div class="mt-8 w-32 h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-500 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style="width: 50%"></div>
+        </div>
+    </div>
+
+    {{-- --- MAIN APP STRUCTURE --- --}}
+    <div x-data="{ 
+            sidebarOpen: true, 
+            mobileOpen: false,
+            init() {
+                // Check screen size on load
+                if (window.innerWidth < 1024) { this.sidebarOpen = false; }
+            }
+         }" 
+         class="flex w-full h-full relative transition-all duration-300">
+
+        {{-- Mobile Overlay --}}
+        <div x-show="mobileOpen" 
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="mobileOpen = false"
+             class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden">
         </div>
 
-        @if (isset($header))
-            {{-- PERBAIKAN 4: Header Sticky (Menempel di atas) --}}
-            <header class="header-modern sticky top-0 z-30 shrink-0">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    {{ $header }}
+        {{-- SIDEBAR INCLUDE --}}
+        @include('layouts.sidebar')
+
+        {{-- MAIN CONTENT WRAPPER --}}
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC] transition-all duration-300 relative">
+            
+            {{-- HEADER MOBILE --}}
+            <div class="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+                <button @click="mobileOpen = true" class="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <img src="{{ asset('images/logo-ubbg.png') }}" class="h-8 w-auto" alt="Logo">
+                <div class="w-8"></div> {{-- Spacer --}}
+            </div>
+
+            {{-- HEADER DESKTOP (Optional Slot) --}}
+            @if (isset($header))
+                <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
+                    <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                        {{ $header }}
+                    </div>
+                </header>
+            @endif
+
+            {{-- CONTENT SCROLLABLE AREA --}}
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth">
+                {{-- Fade In content after loader --}}
+                <div class="animate-[fadeIn_0.5s_ease-out_0.8s_both]">
+                    {{ $slot }}
                 </div>
-            </header>
-        @endif
-
-        {{-- PERBAIKAN 5: Main Area yang Scrollable (overflow-y-auto) --}}
-        <main class="flex-1 overflow-y-auto main-scroll p-6">
-            {{ $slot }}
-        </main>
+            </main>
+        </div>
     </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loader = document.getElementById('premiumLoader');
-        if (loader) { loader.classList.remove('active'); }
-    });
-</script>
+    <style>
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <script>
+        // Logic Loader - Menunggu semua asset selesai di-load
+        window.addEventListener('load', () => {
+            // Delay sedikit biar user sempat lihat brandingnya (Experience Premium)
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 800);
+        });
+    </script>
 </body>
 </html>

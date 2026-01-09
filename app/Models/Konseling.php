@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Konseling extends Model
@@ -87,7 +88,16 @@ class Konseling extends Model
             'id_konseling',             // FK di tabel Jadwal (menunjuk ke Konseling)
             'id_jadwal',                // FK di tabel Hasil (menunjuk ke Jadwal)
             'id_konseling',             // Local Key di tabel Konseling
-            'id_jadwal'                 // Local Key di tabel Jadwal (Primary Key: id_jadwal) <--- PERBAIKAN DISINI
+            'id_jadwal'                 // Local Key di tabel Jadwal (Primary Key: id_jadwal)
         );
+    }
+
+    /**
+     * Relasi ke Survei Kepuasan (NEW FEATURE)
+     * One-to-One: Satu sesi konseling punya satu hasil survei
+     */
+    public function surveiKepuasan(): HasOne
+    {
+        return $this->hasOne(SurveiKepuasanMahasiswa::class, 'id_konseling', 'id_konseling');
     }
 }

@@ -17,9 +17,11 @@ use App\Http\Controllers\DosenKonseling\KasusController;
 use App\Http\Controllers\DosenPembimbing\MahasiswaBimbinganController;
 use App\Http\Controllers\DosenPembimbing\RekomendasiController;
 
+
 // Mahasiswa Feature Controllers
 use App\Http\Controllers\Mahasiswa\PengajuanController as MahasiswaPengajuanController;
 use App\Http\Controllers\Mahasiswa\RiwayatController as MahasiswaRiwayatController;
+use App\Http\Controllers\Mahasiswa\SurveiController;
 
 // Controller Fitur Lanjutan
 use App\Http\Controllers\Warek\KonselingController as WarekKonselingController;
@@ -119,6 +121,13 @@ Route::middleware(['auth', 'verified', 'role:mahasiswa'])->prefix('mahasiswa')->
     Route::put('/pengajuan/{konseling}', [MahasiswaPengajuanController::class, 'update'])->name('pengajuan.update');
     Route::get('/riwayat', [MahasiswaRiwayatController::class, 'index'])->name('riwayat.index');
     Route::get('/riwayat/{konseling}', [MahasiswaRiwayatController::class, 'show'])->name('riwayat.show');
+
+    // --- FITUR BARU: SURVEI KEPUASAN ---
+    Route::get('/konseling/{konseling}/survei', [SurveiController::class, 'create'])->name('survei.create');
+    Route::post('/konseling/{konseling}/survei', [SurveiController::class, 'store'])->name('survei.store');
+    Route::get('/konseling/{konseling}/survei/download', [SurveiController::class, 'download'])->name('survei.download');
 });
+
+
 
 require __DIR__.'/auth.php';
