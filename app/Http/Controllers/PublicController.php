@@ -52,7 +52,7 @@ class PublicController extends Controller
             'visi' => 'Mewujudkan civitas akademika UBBG yang sehat mental, berkarakter, dan prestatif melalui layanan konseling yang terintegrasi.'
         ];
 
-        // --- DATA TIM PENGEMBANG (BAHASA INDONESIA PRO) ---
+        // --- DATA TIM PENGEMBANG ---
         $tim = [
             [
                 'nama' => 'Gempur Budi Anarki',
@@ -76,7 +76,7 @@ class PublicController extends Controller
                 'prodi' => 'S1 Ilmu Komputer',
                 'foto' => 'images/farhan.png', 
                 'bio' => 'Menciptakan desain visual yang estetis dan intuitif, menjembatani kebutuhan pengguna dengan solusi tampilan yang modern dan mudah dipahami.',
-                'github' => 'https://github.com/kyyyyyykyyy', // Link sementara sama kayak Adzky (sesuai request)
+                'github' => 'https://github.com/PojokHanS',
             ],
         ];
 
